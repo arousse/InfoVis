@@ -1,0 +1,2716 @@
+<!-- Based on template Code from d3-graph-gallery.com -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+
+    <!-- Load d3.js and the geo projection plugin -->
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <!-- <link rel="stylesheet" href="./style.css"> -->
+
+    <style>
+      /*<!-- Slider CSS Source: -->
+<!-- https://www.w3schools.com/howto/howto_js_rangeslider.asp-->*/
+
+      .slidecontainer {
+        width: 50%;
+        float: left;
+      }
+      /*<!-- New Slider CSS Source: -->
+<!-- https://bl.ocks.org/officeofjane/b3f6a4f89a54fb193265b5c05659e17b-->*/
+      .ticks {
+        font-size: 10px;
+      }
+      g .tick text {
+        margin-left: 50px;
+      }
+      .track,
+      .track-inset,
+      .track-overlay {
+        stroke-linecap: round;
+      }
+
+      .track {
+        stroke: #000;
+        stroke-opacity: 0.3;
+        stroke-width: 10px;
+      }
+
+      .track-inset {
+        stroke: #ddd;
+        stroke-width: 8px;
+      }
+
+      .track-overlay {
+        pointer-events: stroke;
+        stroke-width: 50px;
+        stroke: transparent;
+        cursor: crosshair;
+      }
+
+      .handle {
+        fill: #fff;
+        stroke: #000;
+        stroke-opacity: 0.5;
+        stroke-width: 1.25px;
+      }
+
+      /* Source: scaling svg elements*/
+      /* http://soqr.fr/testsvg/embed-svg-liquid-layout-responsive-web-design.php */
+      .svg-container {
+        display: inline-block;
+        position: relative;
+        width: 100%;
+        padding-bottom: 40%;
+        vertical-align: middle;
+        overflow: hidden;
+      }
+
+      .svg-content {
+        /* svg into : object, img or inline */
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%; /* only required for <img /> */
+      }
+      #w_map text {
+        margin: 20px;
+      }
+      #w_map text:hover {
+        font-size: 88px;
+        font-size-adjust: 20px;
+        transition: all 500ms;
+        overflow-x: scroll;
+      }
+      .tick:hover {
+        font-size: 18px;
+        font-size-adjust: 20px;
+        transition: all 500ms;
+      }
+      .popup {
+        font-size: x-large;
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        color: rgba(255, 255, 255, 0.849);
+        user-select: none;
+        font-weight: bold;
+      }
+
+      /* The actual popup */
+      .popup .popuptext {
+        visibility: hidden;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px 0;
+        position: absolute;
+        z-index: 1;
+        width: 300px;
+        left: 50%;
+        margin-left: -80px;
+      }
+
+      /* Popup arrow */
+      .popup .popuptext::after {
+        content: "";
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #555 transparent transparent transparent;
+      }
+      /* Toggle this class - hide and show the popup */
+      .popup .show {
+        visibility: visible;
+        -webkit-animation: fadeIn 1s;
+        animation: fadeIn 1s;
+      }
+
+      /* Add animation (fade in the popup) */
+      @-webkit-keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div>
+      <div class="row" style="display: flex; margin-left: 500px">
+        <h1 style="font-size: 30px; color: rgb(0, 0, 0); text-align: center">
+          Visualizing global green patent filings for 2008
+        </h1>
+        <div style="float: left; margin-left: 10px">
+          <button class="popup" onclick="info_screen()">
+            <img src="./icon/info.png" height="30" width="30" />
+
+            <span class="popuptext" id="Popup_screen">
+              The "IPC Green Inventory", developed by the IPC Committee of
+              Experts, facilitates searches for patent information relating to
+              Environmentally Sound Technologies (ESTs), as listed by the United
+              Nations Framework Convention on Climate Change (UNFCCC).ESTs are
+              currently scattered widely across the IPC in numerous technical
+              fields." -
+              https://www.wipo.int/classifications/ipc/green-inventory/home.
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="row" style="display: flex">
+        <div
+          class="column"
+          style="
+            font-size: 10px;
+            width: 50%;
+            color: rgb(0, 0, 0);
+            text-align: left;
+            display: flex;
+          "
+        >
+          <h1>Global patent filings per city</h1>
+          <div style="float: left; margin-left: 5px">
+            <button class="popup" onclick="info_patent_city()">
+              <img src="./icon/info.png" height="30" width="30" />
+
+              <span class="popuptext" id="Popup_city">
+                - Zoom in and out by using the mouse wheel<br />
+                - To hide filings of a country click on its name in the bar plot
+                to the right<br />
+                - To hide groups, interact with the checkboxes<br />
+                - Filings for more than 1000 patents of a single group in a city
+                will encircle their respective bubble.
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          class="column"
+          style="
+            font-size: 10px;
+            width: 49%;
+            color: rgb(0, 0, 0);
+            text-align: left;
+            display: flex;
+          "
+        >
+          <h1>Patent filings per country by ipc group</h1>
+          <div style="float: left; margin-left: 5px">
+            <button class="popup" onclick="info_patent_country()">
+              <img src="./icon/info.png" height="30" width="30" />
+
+              <span class="popuptext" id="Popup_country">
+                - Click on a country to hide it from the plot, readjusting the
+                scaling.<br />
+                - Additional options provide a color blind mode and an overview
+                over all filing groups as a donut plot<br />
+                - Works with filter options<br />
+                - Donut plot provides a detailed view for each country by using
+                the drop down menu<br />
+                - The drop down menu is only visible while the donut plot is
+                active
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div
+        class="svg-container"
+        style="
+          width: 50%;
+          height: 50%;
+          float: left;
+          border: solid #000;
+          margin: -3px;
+        "
+      >
+        <!-- World Map -->
+        <svg id="w_map" class="svg-content" width="1600" height="1200"></svg>
+      </div>
+      <!--Selection Button-->
+      <div style="width: 50%; height: 25px; margin-left: 50px; overflow: auto">
+        <select
+          id="selectButton"
+          style="
+            width: 200px;
+            height: 20px;
+            margin-top: 5px;
+            margin-left: 50px;
+            overflow: auto;
+          "
+          hidden
+        ></select>
+      </div>
+      <!-- Bar Plot and donut canvas-->
+      <div class="svg-container" style="width: 50%; float: right">
+        <svg id="my_plot" class="svg-content" width="800" height="600"></svg>
+      </div>
+    </div>
+
+    <!-- Slider -->
+    <!-- https://www.w3schools.com/howto/howto_js_rangeslider.asp-->
+    <div class="row" style="display: flex; width: 100%">
+      <div
+        class="column"
+        style="
+          font-size: 10px;
+          width: 50%;
+          color: rgb(0, 0, 0);
+          text-align: left;
+          display: flex;
+        "
+      >
+        <h1>Choose a month to be shown</h1>
+        <div style="float: left; margin-left: 10px">
+          <button class="popup" onclick="info_month()">
+            <img src="./icon/info.png" height="30" width="30" />
+
+            <span class="popuptext" id="Popup_month">
+              - Choose a month to be shown above<br />
+              - The Sum checkbox shows all filings from January 1rst until the
+              chosen month
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        class="column"
+        style="
+          font-size: 10px;
+          width: 24%;
+          color: rgb(0, 0, 0);
+          text-align: left;
+          display: flex;
+        "
+      >
+        <h1>IPC group filter option</h1>
+        <div style="float: left; margin-left: 10px">
+          <button class="popup" onclick="info_filter()">
+            <img src="./icon/info.png" height="30" width="30" />
+
+            <span class="popuptext" id="Popup_filter">
+              - click to hide or show different ipc groups<br />
+              - Rechecking the box will render the chosen group on top of all
+              other groups
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        class="column"
+        style="
+          font-size: 10px;
+          width: 25%;
+          color: rgb(0, 0, 0);
+          text-align: left;
+          display: flex;
+        "
+      >
+        <h1>Additional Options</h1>
+        <div style="float: left; margin-left: 10px">
+          <button class="popup" onclick="info_option()">
+            <img src="./icon/info.png" height="30" width="30" />
+
+            <span class="popuptext" id="Popup_option">
+              - Toggle colors: Colorblind mode for all plots<br />
+              - Alternative plot: Switch between bar plot and donut plot
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="svg-container" style="width: 50%; float: left">
+      <!-- New Slider -->
+      <svg id="slider" class="svg-content" width="1000" height="500"></svg>
+    </div>
+
+    <div class="row">
+      <div
+        class="column"
+        style="
+          font-size: 10px;
+          width: 24%;
+          color: rgb(0, 0, 0);
+          text-align: left;
+          display: inline-block;
+        "
+      >
+        <div
+          style="
+            background-color: rgb(213, 210, 210);
+            border: 5px solid rgb(203, 203, 203);
+            border-radius: 5px;
+          "
+        >
+          <input
+            type="checkbox"
+            class="checkbox"
+            value="altEnergyProduction"
+            id="myCheckBox"
+            checked
+          />
+          <label for="myCheckBox"
+            ><span id="Alte" style="color: #0055ff">&#9670;</span>Alternative
+            Energy Production</label
+          >
+
+          <input
+            type="checkbox"
+            class="checkbox"
+            value="transportation"
+            id="myCheckBox2"
+            checked
+          />
+          <label for="myCheckBox2"
+            ><span id="Tran" style="color: #8c00ff">&#9670;</span
+            >Transportation</label
+          >
+          <br />
+
+          <input
+            type="checkbox"
+            class="checkbox"
+            value="energyConservation"
+            id="myCheckBox3"
+            checked
+          />
+          <label for="myCheckBox3"
+            ><span id="Ener" style="color: #00eaff">&#9670;</span>Energy
+            Conservation</label
+          >
+          <input
+            type="checkbox"
+            class="checkbox"
+            value="wasteManagement"
+            id="myCheckBox4"
+            checked
+          />
+          <label for="myCheckBox4"
+            ><span id="Wast" style="color: #fc1919">&#9670;</span>Waste
+            Management</label
+          >
+
+          <br />
+          <input
+            type="checkbox"
+            class="checkbox"
+            value="agriculture"
+            id="myCheckBox5"
+            checked
+          />
+          <label for="myCheckBox5"
+            ><span id="Agri" style="color: #37ff00">&#9670;</span
+            >Agriculture/Forestry</label
+          >
+          <input
+            type="checkbox"
+            class="checkbox"
+            value="administrative"
+            id="myCheckBox6"
+            checked
+          />
+          <label for="myCheckBox6"
+            ><span id="Admi" style="color: #ff00ae">&#9670;</span
+            >Administrative, Regulatory or Design Aspects</label
+          >
+
+          <br />
+          <input
+            type="checkbox"
+            class="checkbox"
+            value="nuclearPower"
+            checked
+          />
+          <label for="myCheckBox5"
+            ><span id="Nucl" style="color: #f2ff00">&#9670;</span>Nuclear Power
+            Generation</label
+          >
+          <input type="checkbox" class="sum_checkbox" unchecked />
+          <label for="myCheckBox6" style="color: black">Sum</label>
+        </div>
+      </div>
+      <div
+        class="column"
+        style="
+          font-size: 10px;
+          width: 25%;
+          color: rgb(0, 0, 0);
+          text-align: left;
+          display: ruby;
+        "
+      >
+        <button
+          style="vertical-align: top; margin-left: 60px"
+          id="toggleColorblind"
+        >
+          Toggle Colors
+        </button>
+        <button style="vertical-align: top; margin-left: 10px" id="togglePlot">
+          Alternative Plot
+        </button>
+      </div>
+    </div>
+    <!-- Class selection -->
+    <!-- Colored text https://www.javatpoint.com/how-to-change-text-color-in-html#:~:text=In%20HTML%2C%20we%20can%20change%20the%20color%20of,an%20Inline%20style%20attribute%203%20Using%20internal%20CSS-->
+    <!--Colored Symbols https://bulletpointsymbol.com/diamond-symbols.html-->
+
+    <script>
+      // ----------------- //
+      // Global  Variables //
+      // ----------------- //
+
+      // Long list to differentiate between IPC Classes and their corresponding category
+      // IPC Classes:
+      const ipc_administrative = ["E04H   1/00", "G06Q", "G08G"];
+
+      const ipc_agriculture = [
+        "A01G  23/00",
+        "A01G  25/00",
+        "A01N  25/00",
+        "A01N  25/02",
+        "A01N  25/04",
+        "A01N  25/06",
+        "A01N  25/08",
+        "A01N  25/10",
+        "A01N  25/12",
+        "A01N  25/14",
+        "A01N  25/16",
+        "A01N  25/18",
+        "A01N  25/20",
+        "A01N  25/22",
+        "A01N  25/24",
+        "A01N  25/26",
+        "A01N  25/28",
+        "A01N  25/30",
+        "A01N  25/32",
+        "A01N  25/34",
+        "A01N  27/00",
+        "A01N  29/00",
+        "A01N  29/02",
+        "A01N  29/04",
+        "A01N  29/06",
+        "A01N  29/08",
+        "A01N  29/10",
+        "A01N  29/12",
+        "A01N   3/00",
+        "A01N   3/02",
+        "A01N   3/04",
+        "A01N  31/00",
+        "A01N  31/02",
+        "A01N  31/04",
+        "A01N  31/06",
+        "A01N  31/08",
+        "A01N  31/10",
+        "A01N  31/12",
+        "A01N  31/14",
+        "A01N  31/16",
+        "A01N  33/00",
+        "A01N  33/02",
+        "A01N  33/04",
+        "A01N  33/06",
+        "A01N  33/08",
+        "A01N  33/10",
+        "A01N  33/12",
+        "A01N  33/14",
+        "A01N  33/16",
+        "A01N  33/18",
+        "A01N  33/20",
+        "A01N  33/22",
+        "A01N  33/24",
+        "A01N  33/26",
+        "A01N  35/00",
+        "A01N  35/02",
+        "A01N  35/04",
+        "A01N  35/06",
+        "A01N  35/08",
+        "A01N  35/10",
+        "A01N  37/00",
+        "A01N  37/02",
+        "A01N  37/04",
+        "A01N  37/06",
+        "A01N  37/08",
+        "A01N  37/10",
+        "A01N  37/12",
+        "A01N  37/14",
+        "A01N  37/16",
+        "A01N  37/18",
+        "A01N  37/20",
+        "A01N  37/22",
+        "A01N  37/24",
+        "A01N  37/26",
+        "A01N  37/28",
+        "A01N  37/30",
+        "A01N  37/32",
+        "A01N  37/34",
+        "A01N  37/36",
+        "A01N  37/38",
+        "A01N  37/40",
+        "A01N  37/42",
+        "A01N  37/44",
+        "A01N  37/46",
+        "A01N  37/48",
+        "A01N  37/50",
+        "A01N  37/52",
+        "A01N  39/00",
+        "A01N  39/02",
+        "A01N  39/04",
+        "A01N  41/00",
+        "A01N  41/02",
+        "A01N  41/04",
+        "A01N  41/06",
+        "A01N  41/08",
+        "A01N  41/10",
+        "A01N  41/12",
+        "A01N  43/00",
+        "A01N  43/02",
+        "A01N  43/04",
+        "A01N  43/06",
+        "A01N  43/08",
+        "A01N  43/10",
+        "A01N  43/12",
+        "A01N  43/14",
+        "A01N  43/16",
+        "A01N  43/18",
+        "A01N  43/20",
+        "A01N  43/22",
+        "A01N  43/24",
+        "A01N  43/26",
+        "A01N  43/28",
+        "A01N  43/30",
+        "A01N  43/32",
+        "A01N  43/34",
+        "A01N  43/36",
+        "A01N  43/38",
+        "A01N  43/40",
+        "A01N  43/42",
+        "A01N  43/44",
+        "A01N  43/46",
+        "A01N  43/48",
+        "A01N  43/50",
+        "A01N  43/52",
+        "A01N  43/54",
+        "A01N  43/56",
+        "A01N  43/58",
+        "A01N  43/60",
+        "A01N  43/62",
+        "A01N  43/64",
+        "A01N  43/647",
+        "A01N  43/653",
+        "A01N  43/66",
+        "A01N  43/68",
+        "A01N  43/70",
+        "A01N  43/707",
+        "A01N  43/713",
+        "A01N  43/72",
+        "A01N  43/74",
+        "A01N  43/76",
+        "A01N  43/78",
+        "A01N  43/80",
+        "A01N  43/82",
+        "A01N  43/824",
+        "A01N  43/828",
+        "A01N  43/832",
+        "A01N  43/836",
+        "A01N  43/84",
+        "A01N  43/86",
+        "A01N  43/88",
+        "A01N  43/90",
+        "A01N  43/92",
+        "A01N  45/00",
+        "A01N  45/02",
+        "A01N  47/00",
+        "A01N  47/02",
+        "A01N  47/04",
+        "A01N  47/06",
+        "A01N  47/08",
+        "A01N  47/10",
+        "A01N  47/12",
+        "A01N  47/14",
+        "A01N  47/16",
+        "A01N  47/18",
+        "A01N  47/20",
+        "A01N  47/22",
+        "A01N  47/24",
+        "A01N  47/26",
+        "A01N  47/28",
+        "A01N  47/30",
+        "A01N  47/32",
+        "A01N  47/34",
+        "A01N  47/36",
+        "A01N  47/38",
+        "A01N  47/40",
+        "A01N  47/42",
+        "A01N  47/44",
+        "A01N  47/46",
+        "A01N  47/48",
+        "A01N  49/00",
+        "A01N  51/00",
+        "A01N  53/00",
+        "A01N  53/02",
+        "A01N  53/04",
+        "A01N  53/06",
+        "A01N  53/08",
+        "A01N  53/10",
+        "A01N  53/12",
+        "A01N  53/14",
+        "A01N  55/00",
+        "A01N  55/02",
+        "A01N  55/04",
+        "A01N  55/06",
+        "A01N  55/08",
+        "A01N  55/10",
+        "A01N  57/00",
+        "A01N  57/02",
+        "A01N  57/04",
+        "A01N  57/06",
+        "A01N  57/08",
+        "A01N  57/10",
+        "A01N  57/12",
+        "A01N  57/14",
+        "A01N  57/16",
+        "A01N  57/18",
+        "A01N  57/20",
+        "A01N  57/22",
+        "A01N  57/24",
+        "A01N  57/26",
+        "A01N  57/28",
+        "A01N  57/30",
+        "A01N  57/32",
+        "A01N  57/34",
+        "A01N  57/36",
+        "A01N  59/00",
+        "A01N  59/02",
+        "A01N  59/04",
+        "A01N  59/06",
+        "A01N  59/08",
+        "A01N  59/10",
+        "A01N  59/12",
+        "A01N  59/14",
+        "A01N  59/16",
+        "A01N  59/18",
+        "A01N  59/20",
+        "A01N  59/22",
+        "A01N  59/24",
+        "A01N  59/26",
+        "A01N  61/00",
+        "A01N  61/02",
+        "A01N  63/00",
+        "A01N  63/02",
+        "A01N  63/04",
+        "A01N  63/10",
+        "A01N  63/20",
+        "A01N  63/30",
+        "A01N  63/32",
+        "A01N  63/38",
+        "A01N  63/50",
+        "A01N  65/00",
+        "C05F",
+        "C09K  17/00",
+        "E02D   3/00",
+      ];
+
+      const ipc_altEnergyProduction = [
+        "A01H",
+        "C02F  11/04",
+        "C02F   3/28",
+        "C07C  67/00",
+        "C07C  69/00",
+        "C10B  53/02",
+        "C10G",
+        "C10L   1/00",
+        "C10L   1/02",
+        "C10L   1/14",
+        "C10L   1/182",
+        "C10L   1/19",
+        "C10L   3/00",
+        "C10L   5/00",
+        "C10L   5/40",
+        "C10L   5/42",
+        "C10L   5/44",
+        "C10L   5/46",
+        "C10L   5/48",
+        "C10L   9/00",
+        "C11C   3/10",
+        "C12N   1/13",
+        "C12N   1/15",
+        "C12N   1/21",
+        "C12N  15/00",
+        "C12N   5/10",
+        "C12N   9/24",
+        "C12P   5/02",
+        "C12P   7/06",
+        "C12P   7/08",
+        "C12P   7/10",
+        "C12P   7/12",
+        "C12P   7/14",
+        "C12P   7/64",
+        "F02C   3/28",
+      ];
+
+      const ipc_energyConservation = [
+        "B60K   6/10",
+        "B60K   6/28",
+        "B60K   6/30",
+        "B60L   3/00",
+        "B60L  50/30",
+        "B60W  10/26",
+        "C09K   5/00",
+        "E04B   1/62",
+        "E04B   1/74",
+        "E04B   1/76",
+        "E04B   1/78",
+        "E04B   1/80",
+        "E04B   1/88",
+        "E04B   1/90",
+        "E04B   2/00",
+        "E04B   5/00",
+        "E04B   7/00",
+        "E04B   9/00",
+        "E04C   1/40",
+        "E04C   1/41",
+        "E04C   2/284",
+        "E04C   2/288",
+        "E04C   2/292",
+        "E04C   2/296",
+        "E04D   1/28",
+        "E04D  13/16",
+        "E04D   3/35",
+        "E04F  13/08",
+        "E04F  15/18",
+        "E06B   3/263",
+        "F03G   7/08",
+        "F21K  99/00",
+        "F21L   4/02",
+        "F24H   7/00",
+        "F28D  20/00",
+        "F28D  20/02",
+        "G01R",
+        "H01G  11/00",
+        "H01L  33/00",
+        "H01L  33/02",
+        "H01L  33/04",
+        "H01L  33/06",
+        "H01L  33/08",
+        "H01L  33/10",
+        "H01L  33/12",
+        "H01L  33/14",
+        "H01L  33/16",
+        "H01L  33/18",
+        "H01L  33/20",
+        "H01L  33/22",
+        "H01L  33/24",
+        "H01L  33/26",
+        "H01L  33/28",
+        "H01L  33/30",
+        "H01L  33/32",
+        "H01L  33/34",
+        "H01L  33/36",
+        "H01L  33/38",
+        "H01L  33/40",
+        "H01L  33/42",
+        "H01L  33/44",
+        "H01L  33/46",
+        "H01L  33/48",
+        "H01L  33/50",
+        "H01L  33/52",
+        "H01L  33/54",
+        "H01L  33/56",
+        "H01L  33/58",
+        "H01L  33/60",
+        "H01L  33/62",
+        "H01L  33/64",
+        "H01L  51/50",
+        "H01M  10/44",
+        "H01M  10/46",
+        "H02J",
+        "H02J  15/00",
+        "H02J   3/28",
+        "H02J   7/00",
+        "H02J   9/00",
+        "H05B  33/00",
+      ];
+
+      const ipc_nuclearPower = ["F02C   1/05", "G21B", "G21C", "G21D"];
+
+      const ipc_transportation = [
+        "B60K  16/00",
+        "B60K   6/00",
+        "B60K   6/20",
+        "B60L  50/50",
+        "B60L  50/51",
+        "B60L  50/53",
+        "B60L  50/60",
+        "B60L  50/61",
+        "B60L  50/64",
+        "B60L  50/70",
+        "B60L  50/71",
+        "B60L  50/72",
+        "B60L  53/00",
+        "B60L  53/10",
+        "B60L  53/12",
+        "B60L  53/122",
+        "B60L  53/124",
+        "B60L  53/126",
+        "B60L  53/14",
+        "B60L  53/16",
+        "B60L  53/18",
+        "B60L  53/20",
+        "B60L  53/22",
+        "B60L  53/24",
+        "B60L  53/30",
+        "B60L  53/31",
+        "B60L  53/36",
+        "B60L  53/37",
+        "B60L  53/38",
+        "B60L  53/39",
+        "B60L  53/53",
+        "B60L  53/56",
+        "B60L  53/60",
+        "B60L  53/63",
+        "B60L  53/64",
+        "B60L  53/65",
+        "B60L  53/66",
+        "B60L  53/67",
+        "B60L  53/68",
+        "B60L  53/80",
+        "B60L  55/00",
+        "B60L  58/00",
+        "B60L  58/10",
+        "B60L  58/12",
+        "B60L  58/13",
+        "B60L  58/16",
+        "B60L  58/18",
+        "B60L  58/20",
+        "B60L  58/21",
+        "B60L  58/22",
+        "B60L  58/24",
+        "B60L  58/25",
+        "B60L  58/26",
+        "B60L  58/27",
+        "B60L  58/30",
+        "B60L  58/33",
+        "B60L   7/10",
+        "B60L   7/12",
+        "B60L   7/14",
+        "B60L   7/16",
+        "B60L   7/18",
+        "B60L   7/20",
+        "B60L   7/22",
+        "B60L   8/00",
+        "B60L   9/00",
+        "B60W  20/00",
+        "B61D  17/02",
+        "B62D  35/00",
+        "B62D  35/02",
+        "B62K",
+        "B62M   1/00",
+        "B62M   3/00",
+        "B62M   5/00",
+        "B62M   6/00",
+        "B63B   1/34",
+        "B63B   1/36",
+        "B63B   1/38",
+        "B63B   1/40",
+        "B63H  13/00",
+        "B63H  16/00",
+        "B63H  19/02",
+        "B63H  19/04",
+        "B63H  21/18",
+        "B63H   9/00",
+        "B64G   1/44",
+        "F02B  43/00",
+        "F02M  21/02",
+        "F02M  27/02",
+        "F16H   3/00",
+        "F16H   3/02",
+        "F16H   3/04",
+        "F16H   3/06",
+        "F16H   3/08",
+        "F16H   3/10",
+        "F16H   3/12",
+        "F16H   3/14",
+        "F16H   3/16",
+        "F16H   3/18",
+        "F16H   3/20",
+        "F16H   3/22",
+        "F16H   3/24",
+        "F16H   3/26",
+        "F16H   3/28",
+        "F16H   3/30",
+        "F16H   3/32",
+        "F16H   3/34",
+        "F16H   3/36",
+        "F16H   3/38",
+        "F16H   3/40",
+        "F16H   3/42",
+        "F16H   3/44",
+        "F16H   3/46",
+        "F16H   3/48",
+        "F16H   3/50",
+        "F16H   3/52",
+        "F16H   3/54",
+        "F16H   3/56",
+        "F16H   3/58",
+        "F16H   3/60",
+        "F16H   3/62",
+        "F16H   3/64",
+        "F16H   3/66",
+        "F16H   3/68",
+        "F16H   3/70",
+        "F16H   3/72",
+        "F16H   3/74",
+        "F16H   3/76",
+        "F16H   3/78",
+        "F16H  48/00",
+        "F16H  48/02",
+        "F16H  48/04",
+        "F16H  48/05",
+        "F16H  48/06",
+        "F16H  48/08",
+        "F16H  48/10",
+        "F16H  48/11",
+        "F16H  48/12",
+        "F16H  48/14",
+        "F16H  48/16",
+        "F16H  48/18",
+        "F16H  48/19",
+        "F16H  48/20",
+        "F16H  48/22",
+        "F16H  48/24",
+        "F16H  48/26",
+        "F16H  48/27",
+        "F16H  48/28",
+        "F16H  48/29",
+        "F16H  48/30",
+        "H02J   7/00",
+        "H02K  29/08",
+        "H02K  49/10",
+      ];
+
+      const ipc_wasteManagement = [
+        "A43B   1/12",
+        "A43B  21/14",
+        "A61L  11/00",
+        "A62D 101/00",
+        "A62D   3/00",
+        "B01D  45/00",
+        "B01D  45/02",
+        "B01D  45/04",
+        "B01D  45/06",
+        "B01D  45/08",
+        "B01D  45/10",
+        "B01D  45/12",
+        "B01D  45/14",
+        "B01D  45/16",
+        "B01D  45/18",
+        "B01D  46/00",
+        "B01D  46/02",
+        "B01D  46/04",
+        "B01D  46/06",
+        "B01D  46/08",
+        "B01D  46/10",
+        "B01D  46/12",
+        "B01D  46/14",
+        "B01D  46/16",
+        "B01D  46/18",
+        "B01D  46/20",
+        "B01D  46/22",
+        "B01D  46/24",
+        "B01D  46/26",
+        "B01D  46/28",
+        "B01D  46/30",
+        "B01D  46/32",
+        "B01D  46/34",
+        "B01D  46/36",
+        "B01D  46/38",
+        "B01D  46/40",
+        "B01D  46/42",
+        "B01D  46/44",
+        "B01D  46/46",
+        "B01D  46/48",
+        "B01D  46/50",
+        "B01D  46/52",
+        "B01D  46/54",
+        "B01D  47/00",
+        "B01D  47/02",
+        "B01D  47/04",
+        "B01D  47/05",
+        "B01D  47/06",
+        "B01D  47/08",
+        "B01D  47/10",
+        "B01D  47/12",
+        "B01D  47/14",
+        "B01D  47/16",
+        "B01D  47/18",
+        "B01D  49/00",
+        "B01D  49/02",
+        "B01D   5/00",
+        "B01D  50/00",
+        "B01D  51/00",
+        "B01D  53/00",
+        "B01D  53/02",
+        "B01D  53/04",
+        "B01D  53/047",
+        "B01D  53/053",
+        "B01D  53/06",
+        "B01D  53/08",
+        "B01D  53/10",
+        "B01D  53/12",
+        "B01D  53/14",
+        "B01D  53/18",
+        "B01D  53/22",
+        "B01D  53/24",
+        "B01D  53/26",
+        "B01D  53/28",
+        "B01D  53/30",
+        "B01D  53/32",
+        "B01D  53/34",
+        "B01D  53/38",
+        "B01D  53/40",
+        "B01D  53/42",
+        "B01D  53/44",
+        "B01D  53/46",
+        "B01D  53/48",
+        "B01D  53/50",
+        "B01D  53/52",
+        "B01D  53/54",
+        "B01D  53/56",
+        "B01D  53/58",
+        "B01D  53/60",
+        "B01D  53/62",
+        "B01D  53/64",
+        "B01D  53/66",
+        "B01D  53/68",
+        "B01D  53/70",
+        "B01D  53/72",
+        "B01D  53/73",
+        "B01D  53/74",
+        "B01D  53/75",
+        "B01D  53/76",
+        "B01D  53/77",
+        "B01D  53/78",
+        "B01D  53/79",
+        "B01D  53/80",
+        "B01D  53/81",
+        "B01D  53/82",
+        "B01D  53/83",
+        "B01D  53/84",
+        "B01D  53/85",
+        "B01D  53/86",
+        "B01D  53/88",
+        "B01D  53/90",
+        "B01D  53/92",
+        "B01D  53/94",
+        "B01D  53/96",
+        "B03B   9/06",
+        "B09B",
+        "B09C",
+        "B22F   8/00",
+        "B63B  35/32",
+        "B63J   4/00",
+        "B65F",
+        "B65G   5/00",
+        "C01B  32/50",
+        "C02F",
+        "C02F   1/00",
+        "C02F   3/00",
+        "C02F   9/00",
+        "C04B  18/04",
+        "C04B  18/06",
+        "C04B  18/08",
+        "C04B   7/24",
+        "C04B   7/26",
+        "C04B   7/28",
+        "C04B   7/30",
+        "C05F",
+        "C05F   7/00",
+        "C08J  11/00",
+        "C08J  11/02",
+        "C08J  11/04",
+        "C08J  11/06",
+        "C08J  11/08",
+        "C08J  11/10",
+        "C08J  11/12",
+        "C08J  11/14",
+        "C08J  11/16",
+        "C08J  11/18",
+        "C08J  11/20",
+        "C08J  11/22",
+        "C08J  11/24",
+        "C08J  11/26",
+        "C08J  11/28",
+        "C09K  11/01",
+        "C09K   3/22",
+        "C09K   3/32",
+        "C10B  21/18",
+        "C10L  10/02",
+        "C10L  10/06",
+        "C11B  11/00",
+        "C11B  13/00",
+        "C11B  13/02",
+        "C11B  13/04",
+        "C14C   3/32",
+        "C21B   3/04",
+        "C21B   7/22",
+        "C21C   5/38",
+        "C25C   1/00",
+        "D01F  13/00",
+        "D01F  13/02",
+        "D01F  13/04",
+        "D21B   1/08",
+        "D21B   1/32",
+        "E02B  15/04",
+        "E03C   1/12",
+        "E03F",
+        "E21B  41/00",
+        "E21B  43/16",
+        "E21F  17/16",
+        "F01N   3/00",
+        "F01N   3/01",
+        "F01N   3/02",
+        "F01N   3/021",
+        "F01N   3/022",
+        "F01N   3/023",
+        "F01N   3/025",
+        "F01N   3/027",
+        "F01N   3/028",
+        "F01N   3/029",
+        "F01N   3/031",
+        "F01N   3/032",
+        "F01N   3/033",
+        "F01N   3/035",
+        "F01N   3/037",
+        "F01N   3/038",
+        "F01N   3/04",
+        "F01N   3/05",
+        "F01N   3/06",
+        "F01N   3/08",
+        "F01N   3/10",
+        "F01N   3/18",
+        "F01N   3/20",
+        "F01N   3/22",
+        "F01N   3/24",
+        "F01N   3/26",
+        "F01N   3/28",
+        "F01N   3/30",
+        "F01N   3/32",
+        "F01N   3/34",
+        "F01N   3/36",
+        "F01N   3/38",
+        "F01N   9/00",
+        "F02B  75/10",
+        "F23B  80/02",
+        "F23C   9/00",
+        "F23G",
+        "F23G   7/06",
+        "F23J  15/00",
+        "F23J   7/00",
+        "F25J   3/02",
+        "F27B   1/18",
+        "F27B  15/12",
+        "G08B  21/12",
+        "G21C  13/10",
+        "G21F   9/00",
+      ];
+      function info_option() {
+        var popup = document.getElementById("Popup_option");
+        popup.classList.toggle("show");
+      }
+      function info_filter() {
+        var popup = document.getElementById("Popup_filter");
+        popup.classList.toggle("show");
+      }
+      function info_month() {
+        var popup = document.getElementById("Popup_month");
+        popup.classList.toggle("show");
+      }
+      function info_patent_city() {
+        var popup = document.getElementById("Popup_city");
+        popup.classList.toggle("show");
+      }
+      function info_patent_country() {
+        var popup = document.getElementById("Popup_country");
+        popup.classList.toggle("show");
+      }
+      function info_screen() {
+        var popup = document.getElementById("Popup_screen");
+        popup.classList.toggle("show");
+      }
+
+      var ipc_groups_array = [
+        ipc_administrative,
+        ipc_agriculture,
+        ipc_altEnergyProduction,
+        ipc_energyConservation,
+        ipc_nuclearPower,
+        ipc_transportation,
+        ipc_wasteManagement,
+      ];
+
+      var ipc_groups_Checkboxes = [
+        "administrative",
+        "agriculture",
+        "altEnergyProduction",
+        "energyConservation",
+        "nuclearPower",
+        "transportation",
+        "wasteManagement",
+      ];
+      //End of IPC Class Arrays//
+
+      //for checkbox rendering on slider
+      //var checked_group = '.administrative,.agriculture,.altEnergyProduction,.energyConservation,.nuclearPower,.transportation,.wasteManagement';
+
+      //Date to time format
+      //https://github.com/d3/d3-time-format
+      const formatTime = d3.timeFormat("%m-%Y");
+      //starting date
+      //https://stackoverflow.com/questions/17721929/date-format-in-d3-js
+      var new_date = formatTime(new Date("2008-01-01"));
+      var test_date = formatTime(new Date("2008-12-01"));
+
+      //flags and variables
+      var sum_cb = false;
+      var selectedValue = 1;
+      var color_blind_on = false;
+      var toggle_plot = false; //true for Donut Plot
+      // ----------------- //
+      //     World Map     //
+      // ----------------- //
+
+      // The svg worldmap
+      // source: https://www.d3-graph-gallery.com/graph/backgroundmap_changeprojection.html
+      // https://www.d3-graph-gallery.com/graph/bubblemap_template.html
+
+      var world_map = d3
+          .select("#w_map")
+          .attr("viewBox", "0 0 1600 1200")
+          .attr("preserveAspectRatio", "xMinYMin meet"),
+        width = +world_map.attr("width"),
+        height = +world_map.attr("height");
+      //adding Zoom to world map
+      //https://stackoverflow.com/questions/51092399/map-zoom-and-pan-in-d3-js-v4-scale-limit
+      //http://jsbin.com/cewicolipo/1/edit?html,css,js,output
+      world_map = d3
+        .select("#w_map")
+        .call(
+          d3
+            .zoom()
+            .on("zoom", function () {
+              world_map.attr("transform", d3.event.transform);
+            })
+            .scaleExtent([1, 8])
+            .translateExtent([
+              [0, 0],
+              [width, height],
+            ])
+        )
+        .append("g");
+
+      // Map and projection. Try:  d3.geoAiry() / d3.geoAitoff() / d3.geoArmadillo() / d3.geoAugust() / d3.geoAzimuthalEqualArea() / d3.geoAzimuthalEquidistant() and more
+      var projection = d3
+        //.geoHammer()
+        .geoMollweide()
+        .scale(width / 2 / Math.PI)
+        .translate([width / 2, height / 2]);
+
+      d3.queue()
+        .defer(
+          d3.json,
+          "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
+        ) // World shape
+        .defer(
+          d3.csv,
+          "https://raw.githubusercontent.com/arousse/InfoVis/master/full_world_map_v1.csv"
+        ) // Position of circles
+        .await(ready);
+      //csv Datasets:
+      //Full map https://raw.githubusercontent.com/arousse/InfoVis/master/full_world_map_v1.csv
+      //Agriculture: https://raw.githubusercontent.com/arousse/InfoVis/master/data_agrar.csv
+
+      var bubble_size; //world var for size created in ready (below)
+
+      function ready(error, dataGeo, data) {
+        //console.log(data)
+
+        // Create a color scale from world map template
+        /* allConttinent can get all countries by using d.name_0
+                       var allContinent = d3.map(data, function(d){return(rename_Classes(d.name_0))}).keys() // array of all countries
+                        var color = d3.scaleOrdinal()
+                        .domain(allContinent)
+                        .range(d3.schemePaired);
+                         */
+
+        // Custom color scheme
+        // https://www.d3-graph-gallery.com/graph/custom_color.html
+        // Extra colours: https://www.color-hex.com/
+        // https://colorpicker.me/
+        var ipcClasses = d3
+          .map(data, function (d) {
+            return rename_Classes(d.ipc_class_symbol);
+          })
+          .keys(); // array of all countries
+        ipcClasses.sort(); // ['administrative', 'agriculture', 'altEnergyProduction', 'energyConservation', 'nuclearPower', 'transportation', 'wasteManagement']
+        //console.log(ipcClasses);
+        var color = d3.scaleOrdinal().domain(ipcClasses).range([
+          "#ff00ae", //admin pin
+          "#37ff00", //agricult hell grün
+          "#0055ff", //alt energy blau
+          "#00eaff", // energy Cons teal
+          "#f2ff00", // nuce power gelb
+          "#8c00ff", // transport lila
+          "#cc4700", //waste Management rot
+        ]);
+
+        /*
+                    [
+                      "gold", //admin
+                      "darkgreen", //agricult
+                      "darkblue", //alt energy
+                      "yellowgreen", // energy Cons
+                      "grey", // nuce power
+                      "purple", // transport
+                      "brown", //waste Management
+                    ]
+                    */
+        //debug
+        //console.log(ipcClasses);
+        /*
+                  for(i=0;i<ipcClasses.length;i++ ){
+                    console.log(color(ipcClasses[i]) );
+                  }
+                  */
+        //List of all countries, sorted for bar plot?
+        //var allCountries = d3.map(data, function(d){return(d.name_0)}).keys().sort() // array of all countries
+        //console.log(allCountries)
+        var dateExtent = d3.extent(data, function (d) {
+          return d.filing_date;
+        });
+        //console.log(dateExtent);
+        // Add a scale for bubble size
+        var valueExtent = d3.extent(data, function (d) {
+          return +d.c_city;
+        });
+        //console.log(valueExtent); //= [0,80]
+        var size = d3
+          .scaleSqrt()
+          .domain([0, 30000]) // What's in the data
+          .range([0, 200]); // Size in pixel
+        bubble_size = size; // set bubble_size for update funtion
+
+        // Draw the map
+        world_map
+          .append("g")
+          .selectAll("path")
+          .data(dataGeo.features)
+          .enter()
+          .append("path")
+          .attr("fill", "#282828") //#69b3a2 teal; #1D1D1D black, #b8b8b8 gray
+          .attr("d", d3.geoPath().projection(projection))
+          //.style("stroke", "none")
+          // new color style:
+          .style("stroke", "#fff")
+          .style("stroke-linejoin", "miter")
+          .style("stroke-width", "0.5")
+          .style("opacity", 1) // world map opacity
+          .append("g");
+
+        //create data for each month?
+        //currently for first month then render in each call
+        var my_map_Data = [];
+        // loop ipc_groups_array
+        for (ipc_loop = 0; ipc_loop < ipc_groups_array.length; ipc_loop++) {
+          var map_data = data
+            // filter to initialize with data for january only
+            .filter(function (d) {
+              return new_date == formatTime(new Date(d.filing_date));
+            })
+            //filter is in ipc group, then loop for each ipc group?
+            .filter(function (d) {
+              return ipc_groups_array[ipc_loop].includes(d.ipc_class_symbol);
+            });
+
+          // Nesting to get all cities and filing count
+          // using d3.nest()
+          //https://stackoverflow.com/questions/40206410/d3-on-how-to-sum-values
+          var nested = d3
+            .nest()
+            .key(function (d) {
+              return d.city;
+            })
+            .rollup(function (v) {
+              return d3.sum(v, function (d) {
+                return d.c_city;
+              });
+            })
+            .entries(map_data)
+            .map(function (d) {
+              return { city: d.key, count: d.value };
+            });
+
+          //console.log(nested);
+          //min and max lat for i'th nested city
+          //console.log(d3.extent(map_data.filter(function(d) {return (d.city == nested[0].city) }), function (d) {
+          //  return +d.lat;
+          //}) );
+          //loop nested.length - 1
+          for (i = 0; i < nested.length; i++) {
+            var data_by_city = map_data.filter(function (d) {
+              return d.city == nested[i].city;
+            });
+            var latitude_extent = d3.extent(data_by_city, function (d) {
+              return +d.lat;
+            });
+            var latitude_average =
+              (latitude_extent[0] + latitude_extent[1]) / 2;
+            var longitude_extent = d3.extent(data_by_city, function (d) {
+              return +d.lng;
+            });
+            var longitude_average =
+              (longitude_extent[0] + longitude_extent[1]) / 2;
+            //console.log(latitude_extent +" "+longitude_extent);
+            //console.log(latitude_average +" "+longitude_average);
+            //console.log(data_by_city);
+            my_map_Data.push({
+              c_city: nested[i].count,
+              city: nested[i].city,
+              lat: latitude_average,
+              lng: longitude_average,
+              ipc_group: ipcClasses[ipc_loop],
+            });
+          }
+        }
+        //console.log(my_map_Data);
+        //var ext = d3.extent(my_map_Data, function (d) {
+        //  return +d.c_city;
+        //});
+        //console.log(ext);
+        // ------------------------ //
+        //Render Bubbles World Map //
+        // ---------------------- //
+
+        var render_world = (my_map_Data) => {
+          world_map
+            .selectAll("myCircles")
+            .data(my_map_Data)
+            .enter()
+            .append("circle")
+            .attr("class", function (d) {
+              return d.ipc_group;
+            }) // add class for update
+            .attr("cx", function (d) {
+              return projection([+d.lng, +d.lat])[0];
+            })
+            .attr("cy", function (d) {
+              return projection([+d.lng, +d.lat])[1];
+            })
+            .transition()
+            .duration(3000)
+            .attr("r", function (d) {
+              return size(+d.c_city);
+            })
+            .style("fill", function (d) {
+              return color(d.ipc_group);
+            })
+            .attr("stroke", function (d) {
+              if (d.c_city >= 1000) {
+                return color(d.ipc_group); //circle stroke if large circle
+              } else {
+                return "none"; //else no stroke
+              }
+            })
+            .attr("stroke-width", 1)
+            .attr("stroke-opacity", 1)
+            .attr("fill-opacity", function (d) {
+              if (d.c_city < 15) {
+                return 0.7; //full color for small circles
+              } else {
+                return 0.5; //lower opacity for bigger cirlces
+              }
+            })
+            .style("opacity", 1);
+        };
+        render_world(my_map_Data);
+
+        // ----------------- //
+        //Rename class names //
+        // ----------------- //
+        function rename_Classes(ipc_class) {
+          if (ipc_administrative.includes(ipc_class)) {
+            //console.log(ipc_class)
+            return "administrative";
+          } else if (ipc_agriculture.includes(ipc_class)) {
+            //console.log(ipc_class)
+            return "agriculture";
+          } else if (ipc_altEnergyProduction.includes(ipc_class)) {
+            //console.log(ipc_class)
+            return "altEnergyProduction";
+          } else if (ipc_energyConservation.includes(ipc_class)) {
+            //console.log(ipc_class)
+            return "energyConservation";
+          } else if (ipc_nuclearPower.includes(ipc_class)) {
+            //console.log(ipc_class)
+            return "nuclearPower";
+          } else if (ipc_transportation.includes(ipc_class)) {
+            //console.log(ipc_class)
+            return "transportation";
+          } else if (ipc_wasteManagement.includes(ipc_class)) {
+            //console.log(ipc_class)
+            return "wasteManagement";
+          } else {
+            return ipc_class;
+          }
+        }
+
+        // Add title and explanation
+        world_map
+          .append("text")
+          .attr("text-anchor", "end")
+          .style("fill", "black")
+          .attr("x", width - 10)
+          .attr("y", height - 30)
+          .attr("width", 90)
+          .html("IPC Green Inventions")
+          .style("font-size", 40);
+
+        // --------------- //
+        //  ADD LEGEND     //
+        // --------------- //
+
+        // Add legend: circles
+        var valuesToShow = [5, 100, 500, 1000];
+        var xCircle = 60;
+        var xLabel = 90;
+        world_map
+          .selectAll("legend")
+          .data(valuesToShow)
+          .enter()
+          .append("circle")
+          .attr("cx", xCircle)
+          .attr("cy", function (d) {
+            return height - size(d);
+          })
+          .attr("r", function (d) {
+            return size(d);
+          })
+          .style("fill", "none")
+          .attr("stroke", "black");
+
+        // Add legend: segments
+        world_map
+          .selectAll("legend")
+          .data(valuesToShow)
+          .enter()
+          .append("line")
+          .attr("x1", function (d) {
+            return xCircle;
+          })
+          .attr("x2", function (d) {
+            return xLabel + size(valuesToShow[valuesToShow.length - 1]);
+          })
+          .attr("y1", function (d) {
+            return height - 2 * size(d);
+          })
+          .attr("y2", function (d) {
+            return height - 2 * size(d);
+          })
+          .attr("stroke", "black")
+          .style("stroke-dasharray", "2,2");
+
+        // Add legend: labels
+        world_map
+          .selectAll("legend")
+          .data(valuesToShow)
+          .enter()
+          .append("text")
+          .attr("x", function (d) {
+            return xLabel + size(valuesToShow[valuesToShow.length - 1]);
+          })
+          .attr("y", function (d) {
+            return height - 2 * size(d);
+          })
+          .text(function (d) {
+            return d;
+          })
+          .style("font-size", 18)
+          .attr("alignment-baseline", "middle");
+
+        // ----------------- //
+        //   Slider Update   //
+        // ----------------- //
+
+        function slider_Update() {
+          my_map_Data = [];
+          //new_date = formatTime(new Date("2008-" + binNumber + "-01"));
+          //remove all bubbles before rendering for next timestep
+          world_map
+            .selectAll(
+              ".administrative,.agriculture,.altEnergyProduction,.energyConservation,.nuclearPower,.transportation,.wasteManagement"
+            )
+            .transition()
+            .duration(3000)
+            .style("opacity", 0)
+            .attr("r", 0)
+            .remove();
+
+          // loop ipc_groups_array
+          for (ipc_loop = 0; ipc_loop < ipc_groups_array.length; ipc_loop++) {
+            var map_data = data
+              .filter(function (d) {
+                if (!sum_cb) {
+                  if (!excluded_countries.includes(d.name_0))
+                    return new_date == formatTime(new Date(d.filing_date));
+                } else {
+                  if (!excluded_countries.includes(d.name_0))
+                    return new_date >= formatTime(new Date(d.filing_date));
+                }
+              })
+              //filter is in ipc group, then loop for each ipc group?
+              .filter(function (d) {
+                return ipc_groups_array[ipc_loop].includes(d.ipc_class_symbol);
+              });
+
+            //console.log("Slider \n");
+            //console.log(ipc_groups_array);
+            //console.log(ipc_groups_Checkboxes);
+            // Nesting to get all cities and filing count
+            // using d3.nest()
+            //https://stackoverflow.com/questions/40206410/d3-on-how-to-sum-values
+            var nested = d3
+              .nest()
+              .key(function (d) {
+                return d.city;
+              })
+              .rollup(function (v) {
+                return d3.sum(v, function (d) {
+                  return d.c_city;
+                });
+              })
+              .entries(map_data)
+              .map(function (d) {
+                return { city: d.key, count: d.value };
+              });
+
+            //console.log(nested);
+            //min and max lat for i'th nested city
+            //console.log(d3.extent(map_data.filter(function(d) {return (d.city == nested[0].city) }), function (d) {
+            //  return +d.lat;
+            //}) );
+            //loop nested.length - 1
+            for (i = 0; i < nested.length; i++) {
+              var data_by_city = map_data.filter(function (d) {
+                return d.city == nested[i].city;
+              });
+              var latitude_extent = d3.extent(data_by_city, function (d) {
+                return +d.lat;
+              });
+              var latitude_average =
+                (latitude_extent[0] + latitude_extent[1]) / 2;
+              var longitude_extent = d3.extent(data_by_city, function (d) {
+                return +d.lng;
+              });
+              var longitude_average =
+                (longitude_extent[0] + longitude_extent[1]) / 2;
+              //console.log(latitude_extent +" "+longitude_extent);
+              //console.log(latitude_average +" "+longitude_average);
+              //console.log(data_by_city);
+              my_map_Data.push({
+                c_city: nested[i].count,
+                city: nested[i].city,
+                lat: latitude_average,
+                lng: longitude_average,
+                ipc_group: ipc_groups_Checkboxes[ipc_loop],
+              });
+            }
+          }
+          //console.log(my_map_Data);
+          render_world(my_map_Data);
+          if (!toggle_plot) {
+            update_BarPlot();
+          }
+          if (toggle_plot) {
+            show_button();
+            update_Donut();
+          }
+        }
+        //console.log(nested);
+        //console.log(my_map_Data);
+
+        // --------------------- //
+        // Update Map Checkboxes //
+        // --------------------- //
+
+        // This function is gonna change the opacity and size of selected and unselected circles
+        //https://www.d3-graph-gallery.com/graph/bubblemap_buttonControl.html
+        // ipc_groups_Checkboxes.includes(grp)
+        function update_Checkboxes() {
+          var checked_group = ".";
+          var count = 1;
+          // For each check box:
+          d3.selectAll(".checkbox").each(function (d) {
+            cb = d3.select(this);
+            grp = cb.property("value");
+
+            // If the box is check, add to checked_group, remove
+            if (cb.property("checked")) {
+              if (!ipc_groups_Checkboxes.includes(grp)) {
+                my_map_Data = []; // clear array before using it again (see .push() below)
+                var ipc_group_to_render = checkbox_value_to_IPC_group(grp);
+                //add ipc groups back to their respective arrays
+                ipc_groups_Checkboxes.push(grp);
+                ipc_groups_array.push(ipc_group_to_render);
+                //console.log(ipc_group_to_render);
+                //console.log(grp);
+                //console.log(color(grp));
+                //render for re-checked ipc group
+                var map_data = data
+                  .filter(function (d) {
+                    if (!sum_cb) {
+                      if (!excluded_countries.includes(d.name_0))
+                        return new_date == formatTime(new Date(d.filing_date));
+                    } else {
+                      if (!excluded_countries.includes(d.name_0))
+                        return new_date == formatTime(new Date(d.filing_date));
+                      return new_date >= formatTime(new Date(d.filing_date));
+                    }
+                  })
+                  //filter is in ipc group, then loop for each ipc group?
+                  .filter(function (d) {
+                    return ipc_group_to_render.includes(d.ipc_class_symbol);
+                  });
+                //console.log(map_data);
+
+                // Nesting to get all cities and filing count
+                // using d3.nest()
+                //https://stackoverflow.com/questions/40206410/d3-on-how-to-sum-values
+                var nested = d3
+                  .nest()
+                  .key(function (d) {
+                    return d.city;
+                  })
+                  .rollup(function (v) {
+                    return d3.sum(v, function (d) {
+                      return d.c_city;
+                    });
+                  })
+                  .entries(map_data)
+                  .map(function (d) {
+                    return { city: d.key, count: d.value };
+                  });
+                //console.log(nested);
+                //loop nested.length - 1
+                for (i = 0; i < nested.length; i++) {
+                  var data_by_city = map_data.filter(function (d) {
+                    return d.city == nested[i].city;
+                  });
+                  var latitude_extent = d3.extent(data_by_city, function (d) {
+                    return +d.lat;
+                  });
+                  var latitude_average =
+                    (latitude_extent[0] + latitude_extent[1]) / 2;
+                  var longitude_extent = d3.extent(data_by_city, function (d) {
+                    return +d.lng;
+                  });
+                  var longitude_average =
+                    (longitude_extent[0] + longitude_extent[1]) / 2;
+
+                  my_map_Data.push({
+                    c_city: nested[i].count,
+                    city: nested[i].city,
+                    lat: latitude_average,
+                    lng: longitude_average,
+                    ipc_group: grp,
+                  });
+                }
+                //console.log(my_map_Data);
+                render_world(my_map_Data);
+              }
+            } else {
+              //remove unchecked IPC Group
+              if (ipc_groups_Checkboxes.includes(grp)) {
+                world_map
+                  .selectAll("." + grp)
+                  .transition()
+                  .duration(3000)
+                  .style("opacity", 0)
+                  .attr("r", 0)
+                  .remove();
+                var index_1 = ipc_groups_Checkboxes.indexOf(grp);
+                var index_2 = ipc_groups_array.indexOf(
+                  checkbox_value_to_IPC_group(grp)
+                );
+                if (index_1 > -1) {
+                  ipc_groups_Checkboxes.splice(index_1, 1);
+                  ipc_groups_array.splice(index_2, 1);
+                }
+              }
+            }
+            //console.log(checked_group+"  count: "+count);
+          });
+          //check if elements are added/removed in sync with cheboxes
+          //console.log(ipc_groups_Checkboxes);
+
+          //update bar plot after checkbox changes
+          if (!toggle_plot) update_BarPlot();
+          if (toggle_plot) update_Donut();
+        }
+
+        function checkbox_value_to_IPC_group(grp) {
+          if (grp == "administrative") {
+            return ipc_administrative;
+          } else if (grp == "agriculture") {
+            return ipc_agriculture;
+          } else if (grp == "altEnergyProduction") {
+            return ipc_altEnergyProduction;
+          } else if (grp == "energyConservation") {
+            return ipc_energyConservation;
+          } else if (grp == "nuclearPower") {
+            return ipc_nuclearPower;
+          } else if (grp == "transportation") {
+            return ipc_transportation;
+          } else if (grp == "wasteManagement") {
+            return ipc_wasteManagement;
+          }
+        }
+
+        // ------------------- //
+        // On Change Listeners //
+        // Slider, Checkboxes  //
+        // ------------------- //
+        //Slider moved as d3js
+
+        //Class Checkboxes
+        // When a button change, run the update function
+        //https://www.d3-graph-gallery.com/graph/bubblemap_buttonControl.html
+        d3.selectAll(".checkbox").on("change", update_Checkboxes);
+
+        //Sum checkbox
+        //change sum true/false then call update
+        d3.select(".sum_checkbox").on("change", function (d) {
+          sum_cb = d3.select(this).property("checked");
+          slider_Update();
+        });
+
+        // ----------------- //
+        //     Bar  Plot     //
+        // ----------------- //
+        //source
+        //https://stackoverflow.com/questions/52534888/how-to-create-multi-ipc_group-vertical-bar-chart-in-d3-js-version-4-and-up-using-s
+
+        //get count for each ipc group for each country in Data array
+        function bar_plot_sub_array(data, current_country) {
+          var my_map_Data = [];
+          var country_name = current_country;
+          //console.log("Country name " + country_name);
+          // loop ipc_groups_array
+          for (ipc_loop = 0; ipc_loop < ipc_groups_array.length; ipc_loop++) {
+            var map_data = data
+              .filter(function (d) {
+                return country_name == d.name_0;
+              })
+              .filter(function (d) {
+                return ipc_groups_array[ipc_loop].includes(d.ipc_class_symbol);
+              });
+
+            // Nesting to get all cities and filing count
+            // using d3.nest()
+            //https://stackoverflow.com/questions/40206410/d3-on-how-to-sum-values
+            var nested = d3
+              .nest()
+              .key(function (d) {
+                return d.name_0;
+              })
+              .rollup(function (v) {
+                return d3.sum(v, function (d) {
+                  return d.c_country;
+                });
+              })
+              .entries(map_data)
+              .map(function (d) {
+                return { country: d.key, count: d.value };
+              });
+
+            for (j = 0; j < nested.length; j++) {
+              my_map_Data.push({
+                count_ipc_group: nested[j].count,
+                ipc_group: ipc_groups_Checkboxes[ipc_loop],
+              });
+            }
+          }
+          //console.log("Test function end with country "+country_name);
+          //console.log(my_map_Data);
+          return my_map_Data;
+        }
+
+        //initiate all countries
+        function get_all_countries() {
+          //https://stackoverflow.com/questions/65371230/d3js-v4-create-filter-function-from-node-values-that-include-arrays
+          let fm = data.flatMap((d) => d.name_0);
+          let dis = [...new Set(fm)];
+          if (dis.includes("NULL")) {
+            var index_1 = dis.indexOf("NULL");
+
+            if (index_1 > -1) {
+              dis.splice(index_1, 1);
+            }
+          }
+          //console.log(dis);
+          return dis;
+        }
+        var all_countries = get_all_countries();
+        var excluded_countries = [];
+
+        //create bar plot variable, modified in bar_plot_prepare_data
+        var bar_plot = d3
+          .select("#my_plot")
+          .attr("viewBox", "0 0 800 600")
+          .attr("preserveAspectRatio", "xMinYMin meet");
+
+        //get count for countries and country names
+        function bar_plot_prepare_data(dataset) {
+          var dataset = dataset.filter(function (d) {
+            if (!sum_cb) return new_date == formatTime(new Date(d.filing_date));
+            else {
+              return new_date >= formatTime(new Date(d.filing_date));
+            }
+          });
+          var data = dataset;
+          var sum = 0;
+          //safe copy: https://www.freecodecamp.org/news/how-to-clone-an-array-in-javascript-1d3183468f6a/
+          var missing_countries = JSON.parse(JSON.stringify(all_countries));
+          var nested_bar_plot = d3
+            .nest()
+            .key(function (d) {
+              return d.name_0;
+            })
+            .rollup(function (v) {
+              return d3.sum(v, function (d) {
+                return d.c_country;
+              });
+            })
+            .entries(data)
+            .map(function (d) {
+              return { country: d.key, count: d.value };
+            });
+
+          //nested_bar_plot.sort();
+          //console.log(nested_bar_plot.length);
+          //datenarray erstellen für den ersten plot render
+          var new_data_bar_plot = [];
+
+          for (i = 0; i < nested_bar_plot.length; i++) {
+            if (
+              nested_bar_plot[i].country != "NULL" &&
+              !excluded_countries.includes(nested_bar_plot[i].country)
+            ) {
+              //remove all existing countries from missing_countires
+              if (missing_countries.includes(nested_bar_plot[i].country)) {
+                var index_1 = missing_countries.indexOf(
+                  nested_bar_plot[i].country
+                );
+
+                if (index_1 > -1) {
+                  missing_countries.splice(index_1, 1);
+                }
+              }
+
+              new_data_bar_plot.push({
+                name_0: nested_bar_plot[i].country,
+                c_country: nested_bar_plot[i].count,
+                Data: bar_plot_sub_array(dataset, nested_bar_plot[i].country),
+              });
+            }
+          }
+          //add missing_countries to data array
+          for (i = 0; i < missing_countries.length; i++) {
+            new_data_bar_plot.push({
+              name_0: missing_countries[i],
+              c_country: 0,
+              Data: [],
+            });
+          }
+          //console.log("End of prepare data: ");
+          //console.log(all_countries);
+          //console.log(missing_countries);
+          //console.log(new_data_bar_plot);
+          //sort data before rendering
+          new_data_bar_plot.sort(function (a, b) {
+            return d3.ascending(a.name_0, b.name_0);
+          });
+          //console.log(all_countries);
+          render_bar_plot(new_data_bar_plot);
+        }
+
+        //render bar plot
+        function render_bar_plot(ExpectedData) {
+          // set the dimensions and margins of the graph
+          // Source: https://www.d3-graph-gallery.com/graph/barplot_horizontal.html
+          var margin = { top: 20, right: 30, bottom: 40, left: 120 },
+            plot_width = 660 - margin.left - margin.right,
+            plot_height = 600 - margin.top - margin.bottom;
+
+          // erstellung der bar plot
+          bar_plot = d3
+            .select("#my_plot")
+            .attr("viewBox", "0 0 800 600")
+            .attr("preserveAspectRatio", "xMinYMin meet");
+
+          //neu
+          var Wsvg = +bar_plot.attr("width");
+          var Hsvg = +bar_plot.attr("height");
+          var height = plot_width;
+          var width = plot_height;
+          //swap x and y achsis
+          var x = d3
+            .scaleLinear()
+            .domain([
+              0,
+              d3.max(ExpectedData, function (d) {
+                return d.c_country;
+              }),
+            ])
+            .nice()
+            .rangeRound([0, width]);
+
+          var y = d3
+            .scaleBand()
+            .domain(
+              ExpectedData.map(function (d) {
+                return d.name_0;
+              })
+            )
+            .rangeRound([0, height])
+            .padding(0.3)
+            .align(0.3);
+
+          bar_plot = d3
+            .select("#my_plot")
+            //.style("Width", "800px")
+            //.style("height", "600px")
+            .style("overflow-x", "auto");
+          var g = bar_plot.append("g").attr("transform", "translate(140, 40)");
+
+          g.selectAll(".group")
+            .data(ExpectedData)
+            .attr("class", "group")
+            .enter()
+            .append("g")
+            .each(function (d, i) {
+              d.Data.map((obj, j, arr) => {
+                d3.select(this)
+                  .append("rect")
+                  .attr("class", function (e) {
+                    return obj.ipc_group;
+                  })
+                  .attr("data-index", j)
+                  .attr("y", function (e) {
+                    return y(d.name_0);
+                  })
+                  .attr("height", y.bandwidth())
+                  .style("fill", function (e) {
+                    return color(obj.ipc_group);
+                  }) //bar plot ipc_groups
+                  .attr("x", function (e) {
+                    let sum = 0;
+                    arr.map((obj_1, k) => {
+                      if (k < j) {
+                        sum = sum + obj_1.count_ipc_group;
+                      }
+                    });
+                    return x(sum);
+                  })
+                  .attr("width", function (e) {
+                    return x(obj.count_ipc_group);
+                  });
+              });
+            });
+
+          g.append("g")
+            .attr("class", "axis axis--x")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+
+          g.append("g").attr("class", "axis axis--y").call(d3.axisLeft(y));
+          //#37ff00 farbe
+
+          //change excluded country text grey
+          bar_plot.selectAll(".tick text").each(function (d, i) {
+            if (excluded_countries.includes(d3.select(this).text()))
+              d3.select(this).attr("fill", "#999999");
+          });
+
+          //mouse over disabled
+          /*g.selectAll('rect')
+                    .on('mouseover', function(d) { d3.select(this).style('fill', 'gray'); })
+                    .on('mouseout', function(d, i, j) { const index = j[i].attributes['data-index'].nodeValue;
+                                                            d3.select(this).style('fill', d.Data[index].ipc_group);
+                                                        });*/
+          //on click add/remove country
+          //https://www.geeksforgeeks.org/d3-js-selection-on-function/
+          bar_plot.selectAll("text").on("click", function (d, i) {
+            let clicked_text = d3.select(this).text();
+            if (
+              all_countries.includes(clicked_text) &&
+              !excluded_countries.includes(clicked_text)
+            ) {
+              //console.log(clicked_text);
+              excluded_countries.push(clicked_text);
+              //console.log(excluded_countries);
+            } else if (excluded_countries.includes(clicked_text)) {
+              //console.log("Delete from excluded countires");
+              var index_1 = excluded_countries.indexOf(clicked_text);
+
+              if (index_1 > -1) {
+                excluded_countries.splice(index_1, 1);
+              }
+            }
+            if (!toggle_plot) {
+              update_BarPlot();
+              slider_Update();
+            }
+
+            //console.log(d3.select(this).text());
+          });
+        }
+        bar_plot_prepare_data(data);
+
+        // Update Quick n dirty variante
+        function update_BarPlot() {
+          var sum = 0;
+          // remove alten plot
+          bar_plot.selectAll("g").remove();
+          // neuen datensatz erstellen
+          bar_plot_prepare_data(data);
+        }
+        // mouse over
+        bar_plot
+          .select("text")
+          .on("mouseover", function (d, i) {
+            var xPos = +d3.select(this).attr("x");
+            d3.select(this).attr("x", xPos + 40);
+          })
+          .on("mouseout", function () {
+            d3.select(this).attr("x", function (d) {
+              return xPos;
+            });
+          });
+
+        // ----------- //
+        //  New Slider //
+        // ----------- //
+        // https://bl.ocks.org/officeofjane/b3f6a4f89a54fb193265b5c05659e17b
+        var formatDateIntoMonth = d3.timeFormat("%b");
+        var formatDate = d3.timeFormat("%b %Y");
+
+        var startDate = new Date(dateExtent[0]),
+          endDate = new Date(dateExtent[1]);
+
+        var slider_margin = { top: 0, right: 50, bottom: 0, left: 50 },
+          slider_width = 1000 - slider_margin.left - slider_margin.right,
+          slider_height = 300 - slider_margin.top - slider_margin.bottom;
+
+        var svg_slider = d3
+          .select("#slider")
+          .attr("viewBox", "0 0 1000 500")
+          .attr("preserveAspectRatio", "xMinYMin meet")
+          .attr(
+            "width",
+            slider_width + slider_margin.left + slider_margin.right
+          )
+          .attr("height", slider_height);
+
+        var x = d3
+          .scaleTime()
+          .domain([startDate, endDate])
+          .range([0, slider_width])
+          .clamp(true);
+
+        var slider = svg_slider
+          .append("g")
+          .attr("class", "slider")
+          .attr(
+            "transform",
+            "translate(" + slider_margin.left + "," + slider_height / 2 + ")"
+          );
+
+        slider
+          .append("line")
+          .attr("class", "track")
+          .attr("x1", x.range()[0])
+          .attr("x2", x.range()[1])
+          .select(function () {
+            return this.parentNode.appendChild(this.cloneNode(true));
+          })
+          .attr("class", "track-inset")
+          .select(function () {
+            return this.parentNode.appendChild(this.cloneNode(true));
+          })
+          .attr("class", "track-overlay")
+          .call(
+            d3
+              .drag()
+              .on("start.interrupt", function () {
+                slider.interrupt();
+              })
+              .on("start drag", function () {
+                update_slider_text(x.invert(d3.event.x));
+              })
+              .on("end.interrupt", function () {
+                get_slider_date(x.invert(d3.event.x));
+                //console.log("Drag end");
+              })
+          );
+
+        slider
+          .insert("g", ".track-overlay")
+          .attr("class", "ticks")
+          .attr("transform", "translate(0," + 18 + ")")
+          .selectAll("text")
+          .data(x.ticks(10))
+          .enter()
+          .append("text")
+          .attr("x", x)
+          .attr("y", 10)
+          .attr("text-anchor", "middle")
+          .style("font-size", 22)
+          .text(function (d) {
+            return formatDateIntoMonth(d);
+          });
+
+        var label = slider
+          .append("text")
+          .attr("class", "label")
+          .attr("text-anchor", "middle")
+          .text(formatDate(startDate))
+          .style("font-size", 26)
+          .attr("transform", "translate(0," + -25 + ")");
+
+        var handle = slider
+          .insert("circle", ".track-overlay")
+          .attr("class", "handle")
+          .attr("r", 9);
+
+        function update_slider_text(h) {
+          handle.attr("cx", x(h));
+          label.attr("x", x(h)).text(formatDate(h));
+        }
+        function get_slider_date(h) {
+          new_date = formatTime(h);
+          slider_Update();
+          //console.log(formatTime(h));
+        }
+        // ----------- //
+        //  Colorblind //
+        //    Mode     //
+        // ----------- //
+        document
+          .getElementById("toggleColorblind")
+          .addEventListener("click", toggleColorblind, false);
+        function toggleColorblind() {
+          color_blind_on = !color_blind_on;
+          //rainbow color
+          if (!color_blind_on) {
+            color = d3.scaleOrdinal().domain(ipcClasses).range([
+              "#ff00ae", //admin pin
+              "#37ff00", //agricult hell grün
+              "#0055ff", //alt energy blau
+              "#00eaff", // energy Cons teal
+              "#f2ff00", // nuce power gelb
+              "#8c00ff", // transport lila
+              "#cc4700", //waste Management rot
+            ]);
+            document.getElementById("Admi").style.color = "#ff00ae";
+            document.getElementById("Agri").style.color = "#37ff00";
+            document.getElementById("Alte").style.color = "#0055ff";
+            document.getElementById("Ener").style.color = "#00eaff";
+            document.getElementById("Nucl").style.color = "#f2ff00";
+            document.getElementById("Tran").style.color = "#8c00ff";
+            document.getElementById("Wast").style.color = "#cc4700";
+          }
+          //color blind colors: colorbrewer2.org
+          else {
+            color = d3
+              .scaleOrdinal()
+              .domain(ipcClasses)
+              .range([
+                "#d73027",
+                "#fc8d59",
+                "#fee090",
+                "#ffffbf",
+                "#e0f3f8",
+                "#91bfdb",
+                "#4575b4",
+              ]);
+            document.getElementById("Admi").style.color = "#d73027";
+            document.getElementById("Agri").style.color = "#fc8d59";
+            document.getElementById("Alte").style.color = "#fee090";
+            document.getElementById("Ener").style.color = "#ffffbf";
+            document.getElementById("Nucl").style.color = "#e0f3f8";
+            document.getElementById("Tran").style.color = "#91bfdb";
+            document.getElementById("Wast").style.color = "#4575b4";
+          }
+          //update all after colours are changed
+          slider_Update();
+        }
+        // ------------- //
+        // Select Button //
+        // ------------- //
+        //https://www.d3-graph-gallery.com/graph/connectedscatter_select.html
+        // initialize default and selected value
+        var select_button_default = "Select a country / Show all";
+        var selected_country = "Select a country / Show all";
+
+        //show and render select button
+        function show_button() {
+          //clear entries before rednering
+          selected_country = select_button_default;
+          d3.select("#selectButton").selectAll("option").remove();
+
+          //get button entries
+          var button_entries = [];
+          var button_data = data.filter(function (d) {
+            if (!sum_cb) return new_date == formatTime(new Date(d.filing_date));
+            else {
+              return new_date >= formatTime(new Date(d.filing_date));
+            }
+          });
+          // loop ipc_groups_array
+          var map_data = [];
+          for (ipc_loop = 0; ipc_loop < ipc_groups_array.length; ipc_loop++) {
+            map_data = button_data.filter(function (d) {
+              return ipc_groups_array[ipc_loop].includes(d.ipc_class_symbol);
+            });
+          }
+          var nested = d3
+            .nest()
+            .key(function (d) {
+              return d.name_0;
+            })
+            .rollup(function (v) {
+              return d3.sum(v, function (d) {
+                return d.c_country;
+              });
+            })
+            .entries(map_data)
+            .map(function (d) {
+              return { country: d.key, count: d.value };
+            });
+          //console.log("Nested in test ");
+          //console.log(nested);
+          //min and max lat for i'th nested city
+          //console.log(d3.extent(map_data.filter(function(d) {return (d.city == nested[0].city) }), function (d) {
+          //  return +d.lat;
+          //}) );
+          //loop nested.length - 1
+          for (j = 0; j < nested.length; j++) {
+            if (nested[j].country != "NULL")
+              button_entries.push(nested[j].country);
+          }
+          //sort then add default to pos 0
+          button_entries.sort();
+          button_entries.unshift(select_button_default);
+          //console.log(button_entries);
+
+          // Show button
+          document.getElementById("selectButton").removeAttribute("hidden");
+
+          //select button rendering:
+          // add the options to the button
+          d3.select("#selectButton")
+            .attr("viewBox", "0 0 180 20")
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("width", 180)
+            .attr("height", 20)
+            .selectAll("myOptions")
+            .data(button_entries)
+            .enter()
+            .append("option")
+            .text(function (d) {
+              return d;
+            }) // text showed in the menu
+            .attr("value", function (d) {
+              return d;
+            }); // corresponding value returned by the button
+        }
+        //hide selection box
+        function hide_button() {
+          document
+            .getElementById("selectButton")
+            .setAttribute("hidden", "hidden");
+
+          selected_country = select_button_default;
+        }
+        // When the button is changed, run the updateChart function
+        d3.select("#selectButton").on("change", function (d) {
+          // recover the option that has been chosen
+          selected_country = d3.select(this).property("value");
+          // run the updateChart function with this selected option
+          update_Donut();
+        });
+
+        // ----------- //
+        //  Donut Pie: //
+        // ----------- //
+        // Toggle button to switch between plots
+        document
+          .getElementById("togglePlot")
+          .addEventListener("click", togglePlot, false);
+        function togglePlot() {
+          if (!toggle_plot) {
+            toggle_plot = true;
+            show_button();
+            update_Donut();
+          } else {
+            toggle_plot = false;
+            update_BarPlot();
+            hide_button();
+          }
+        }
+
+        function update_Donut() {
+          var sum = 0;
+
+          // remove alten plot
+          bar_plot.selectAll("g").remove();
+          // neuen datensatz erstellen
+          var data_donut = data
+            .filter(function (d) {
+              if (!sum_cb)
+                return new_date == formatTime(new Date(d.filing_date));
+              else {
+                return new_date >= formatTime(new Date(d.filing_date));
+              }
+            })
+            .filter(function (d) {
+              if (selected_country == select_button_default) {
+                return d;
+              } else {
+                return d.name_0 == selected_country;
+              }
+            });
+          donut_prepare_data(data_donut);
+        }
+
+        //sort keys for donut plot
+        //https://www.w3docs.com/snippets/javascript/how-to-sort-javascript-object-by-key.html
+        function sortObj(obj) {
+          return Object.keys(obj)
+            .sort()
+            .reduce(function (result, key) {
+              result[key] = obj[key];
+              return result;
+            }, {});
+        }
+
+        function donut_prepare_data(dataset) {
+          var my_map_Data = [];
+          var data_by_ipc = {};
+          //console.log("Country name " + country_name);
+          // loop ipc_groups_array
+          for (ipc_loop = 0; ipc_loop < ipc_groups_array.length; ipc_loop++) {
+            var map_data = dataset.filter(function (d) {
+              return ipc_groups_array[ipc_loop].includes(d.ipc_class_symbol);
+            });
+            //console.log("Map_Data: ");
+            //console.log(map_data);
+
+            // Nesting to get all cities and filing count
+            // using d3.nest()
+            //https://stackoverflow.com/questions/40206410/d3-on-how-to-sum-values
+            var nested = d3
+              .nest()
+              .key(function (d) {
+                return d.name_0;
+              })
+              .rollup(function (v) {
+                return d3.sum(v, function (d) {
+                  return d.c_country;
+                });
+              })
+              .entries(map_data)
+              .map(function (d) {
+                return { country: d.key, count: d.value };
+              });
+            //console.log("Nested in test ");
+            //console.log(nested);
+            //min and max lat for i'th nested city
+            //console.log(d3.extent(map_data.filter(function(d) {return (d.city == nested[0].city) }), function (d) {
+            //  return +d.lat;
+            //}) );
+            //loop nested.length - 1
+            for (j = 0; j < nested.length; j++) {
+              my_map_Data.push({
+                count_ipc_group: nested[j].count,
+                ipc_group: ipc_groups_Checkboxes[ipc_loop],
+              });
+            }
+          }
+          //console.log("nested");
+          //console.log(nested);
+          var nested_2 = d3
+            .nest()
+            .key(function (d) {
+              return d.ipc_group;
+            })
+            .rollup(function (v) {
+              return d3.sum(v, function (d) {
+                return d.count_ipc_group;
+              });
+            })
+            .entries(my_map_Data)
+            .map(function (d) {
+              return { ipc_group: d.key, count_ipc_group: d.value };
+            });
+          //console.log(nested_2);
+          for (k = 0; k < nested_2.length; k++) {
+            //console.log("before if  " + nested_2[k].ipc_group + "  k = " + k);
+            if (ipc_groups_Checkboxes.includes(nested_2[k].ipc_group)) {
+              data_by_ipc[nested_2[k].ipc_group] = nested_2[k].count_ipc_group;
+              //console.log(nested_2[k].ipc_group + "  k = " + k);
+            }
+          }
+          //console.log("data_by_ipc");
+          //console.log(sortObj(data_by_ipc));
+          //console.log("ipc_groups_Checkboxes");
+          //console.log(ipc_groups_Checkboxes);
+          render_donut(sortObj(data_by_ipc));
+        }
+
+        // set the dimensions and margins of the graph
+        function render_donut(data_by_ipc) {
+          //donut rendering
+          var width = 800;
+          height = 600;
+          margin = 120;
+
+          // The radius of the pieplot is half the width or half the height (smallest one). I subtract a bit of margin.
+          var radius = Math.min(width, height) / 2 - margin;
+
+          // append the svg object to the div called 'my_dataviz'
+          var donut_svg = d3
+            .select("#my_plot")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("g")
+            .attr(
+              "transform",
+              "translate(" + width / 2 + "," + height / 2 + ")"
+            );
+
+          // Create dummy data
+          //var data = {a: 9, b: 20, c:30, d:8, e:12, f:3, g:7, h:14}
+          var data = data_by_ipc;
+          // set the color scale
+          //var color = d3.scaleOrdinal()
+          // .domain(["administrative", "agriculture", "altEnergyProduction", "energyConservation", "nuclearPower"])
+          // .range(d3.schemeDark2);
+
+          // Compute the position of each group on the pie:
+          var pie = d3
+            .pie()
+            .sort(null) // Do not sort group by size
+            .value(function (d) {
+              return d.value;
+            });
+          var data_ready = pie(d3.entries(data));
+
+          // The arc generator
+          var arc = d3
+            .arc()
+            .innerRadius(radius * 0.5) // This is the size of the donut hole
+            .outerRadius(radius * 0.8);
+
+          // Another arc that won't be drawn. Just for labels positioning
+          var outerArc = d3
+            .arc()
+            .innerRadius(radius * 0.9)
+            .outerRadius(radius * 1.0);
+
+          // Build the pie chart: Basically, each part of the pie is a path that we build using the arc function.
+          donut_svg
+            .selectAll("allSlices")
+            .data(data_ready)
+            .enter()
+            .append("path")
+            .attr("d", arc)
+            .attr("fill", function (d) {
+              //console.log(d.data.key);
+              //console.log(color(d.data.key));
+              return color(d.data.key);
+            })
+            .attr("stroke", "white")
+            .style("stroke-width", "2px")
+            .style("opacity", 0.7);
+
+          // Add the polylines between chart and labels:
+          donut_svg
+            .selectAll("allPolylines")
+            .data(data_ready)
+            .enter()
+            .append("polyline")
+            .attr("stroke", function (d) {
+              return color(d.data.key);
+            })
+            .style("fill", "none")
+            .attr("stroke-width", 1)
+            .attr("points", function (d) {
+              var posA = arc.centroid(d); // line insertion in the slice
+              var posB = outerArc.centroid(d); // line break: we use the other arc generator that has been built only for that
+              var posC = outerArc.centroid(d); // Label position = almost the same as posB
+              var midangle = d.startAngle + (d.endAngle - d.startAngle) / 2; // we need the angle to see if the X position will be at the extreme right or extreme left
+              posC[0] = radius * 0.95 * (midangle < Math.PI ? 1 : -1); // multiply by 1 or -1 to put it on the right or on the left
+              return [posA, posB, posC];
+            });
+
+          // Add the polylines between chart and labels:
+          donut_svg
+            .selectAll("allLabels")
+            .data(data_ready)
+            .enter()
+            .append("text")
+            .text(function (d) {
+              //console.log(d.data.key);
+              return d.data.value;
+            })
+            .attr("transform", function (d) {
+              var pos = outerArc.centroid(d);
+              var midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+              pos[0] = radius * 0.99 * (midangle < Math.PI ? 1 : -1);
+              return "translate(" + pos + ")";
+            })
+            .style("text-anchor", function (d) {
+              var midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+              return midangle < Math.PI ? "start" : "end";
+            });
+        }
+        // Test Area
+
+        // end test area
+      }
+    </script>
+  </body>
+</html>
